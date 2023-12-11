@@ -1,6 +1,6 @@
 # Song List
 
-This website is inspired by a rhythm game. Created with React. The main purpose of this website is to practice coding and self-use.
+This website is inspired by a rhythm game. Created with React (Vite). The main purpose of this website is to practice coding and self-use.
 This is the code without database information.
 
 ## About Database and Backend
