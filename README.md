@@ -19,18 +19,12 @@ _id is the unique identifier for a song
 Version has a collection of all charts within the version.
 It contains _id, version_released, chart_id, level, chart and youtube
 
-- _id is a unique identifier for the chart
-- To access the chart's difficulty, it can be accessed in the level array with a length of 5 (Basic, Advanced, Expert, Master, Re:Master)
-- chart represents different chart types, it includes standard (s) and deluxe (d)
-- version_released represents which version the chart is released and it may do further filtering in web pages
+- _id (string) - an unique identifier for the chart
+- level (array of doubles) - an array with a length of 5 (Basic, Advanced, Expert, Master, Re:Master), e.g. 14.8
+- chart (string) - represents different chart types, it includes standard (s) and deluxe (d)
+- version_released (string) - represents which version the chart is released and it may do further filtering in web pages
 - youtube is an array of urls (length of 5) for charts that is available on youtube
 - chart_id represents the _id of the song (a song can have 2 charts which includes standard and deluxe chart)
-
-- _id 
-- chart_id (id from charts) 
-- chart => d or s
-- level => XX.XX e.g. 14.8
-- version_released => e.g. Festival+
 
 ### thumbnail 
 - Get thumbnail by song._id
