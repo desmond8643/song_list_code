@@ -2,9 +2,15 @@
 
 This website is inspired by a rhythm game. Created with React. The main purpose of this website is to practice coding and self-use.
 
-How the database works
+## About Database and Backend
+For some data, I find that it is more convenient to store in a database instead within the frontend with an object, so chose to store in Firebase Firestore because it does not need a backend.
+However, there are some limitation with Firestore (such as only 50000 reads per day), so I chose to use MongoDB.
+As MongoDB need a backend to get the data, so I created a backend application with Node.js and do fetching in React.
 
-id is the unique identifier for a song
+## How the database works
+
+# song
+_id is the unique identifier for a song
 - To access common attributes such as thumbnail and title
 
 chartLevels.id is a unique identifier for the chart
@@ -17,9 +23,9 @@ charts
 - title
 
 chartLevels
-- id 
+- _id 
 - chart_id (id from charts) 
-- chart type => d or s
+- chart => d or s
 - difficulty => Expert, Master, Re:Master
 - level => XX.XX e.g. 14.8
 - version => e.g. Festival+
@@ -27,46 +33,4 @@ chartLevels
 
 thumbnail 
 - Get thumbnail by id
-
-Draft
-
-Song
-- title
-- category (G&V, maimai, etc)
-- difficulty + level (Expert, Master, Re:Master)
-- Update name
-- version
-- Obtain (task track, check-in, play chunithm, otomodachi)
-- Update Type: Event/Maimai/Song-only/Season/Check-in
-
-Theoretical Calculator
-
-Choose version 
-(only design for completed version, so the structure can be simplier)
-Fes+
-
-New songs
-
-Old songs
-
-Structure
-{
-xx.x: quantity,
-yy.y: quantity,
-zz.z: quantity
-}
-
-Algorithms
-- Calculate score for song level
-- Add best 15 and best 35
-- include song range
-
-title
-id
-level in different versions
-version released
-
-
-
-
 
