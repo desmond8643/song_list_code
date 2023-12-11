@@ -1,6 +1,7 @@
 # Song List
 
 This website is inspired by a rhythm game. Created with React. The main purpose of this website is to practice coding and self-use.
+This is the code without database information.
 
 ## About Database and Backend
 For some data, I find that it is more convenient to store in a database instead within the frontend with an object, so chose to store in Firebase Firestore because it does not need a backend.
