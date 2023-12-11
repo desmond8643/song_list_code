@@ -4,9 +4,10 @@ This website is inspired by a rhythm game. Created with React. The main purpose 
 This is the code without database information.
 
 ## About Database and Backend
-For some data, I find that it is more convenient to store in a database instead within the frontend with an object, so chose to store in Firebase Firestore because it does not need a backend.
-However, there are some limitation with Firestore (such as only 50000 reads per day), so I chose to use MongoDB.
-As MongoDB need a backend to get the data, so I created a backend application with Node.js and do fetching in React.
+- For some data, I find that it is more convenient to store in a database instead within the frontend with an object, so chose to store in Firebase Firestore because it does not need a backend.
+- However, there are some limitation with Firestore (such as only 50000 reads per day), so I chose to use MongoDB.
+- As MongoDB need a backend to get the data, so I created a backend application with Node.js and do fetching in React.
+- I deployed React.js to Netlify, Node.js to Render and Database to Firebase and MongoDB.
 
 ## How the database works
 Each represents a collection in a database
