@@ -2,23 +2,78 @@ import React from "react"
 import { BsFillClipboardFill, BsYoutube, BsFunnel } from "react-icons/bs"
 import { useLoaderData, useSearchParams, Link, defer } from "react-router-dom"
 import { fetchFestivalPlusData } from "./Server/fetchBackend"
+import { fetchBuddiesData } from "./Server/fetchBackend"
 import { fetchChartsData } from "./Server/fetchBackend"
+import { fetchSongsData } from "./Server/fetchBackend"
+import ScrollToTopButton from "./ScrollToTop"
 
 export async function loader() {
-  const chartsPromise = await fetchChartsData()
-  const chartLevelsPromise = await fetchFestivalPlusData()
-  return { charts: chartsPromise, chartLevels: chartLevelsPromise }
+  const chartsPromise = await fetchSongsData()
+  const chartLevelsPromise = await fetchBuddiesData()
+  const chartDataPromise = await fetchChartsData()
+  return {
+    songs: chartsPromise,
+    chartLevels: chartLevelsPromise,
+    chartData: chartDataPromise,
+  }
 }
 export default function NewList() {
-  const songData = useLoaderData().charts
+  const songData = useLoaderData().songs
   const chartLevelData = useLoaderData().chartLevels
-  console.log(chartLevelData)
+  const chartData = useLoaderData().chartData
+
+  const currentVersionId = []
+  for (let i = 0; i < chartLevelData.length; i++) {
+    currentVersionId.push(chartLevelData[i]._id)
+  }
+
+  const currentVersionChartData = chartData.filter((chart) =>
+    currentVersionId.includes(chart._id)
+  )
 
   const [youtubeVisible, setYoutubeVisible] = React.useState([])
 
   const [versionF, setVersionF] = React.useState(null)
 
-  const filteredChartData = chartLevelData.filter((chart) => {
+  const [youtubeUrl, setYoutubeUrl] = React.useState({})
+
+  chartLevelData.forEach((chart) => {
+    const getChartData = currentVersionChartData.filter(
+      (chartData) => chartData._id === chart._id
+    )[0]
+    if (getChartData.youtube) {
+      chart.youtube = getChartData.youtube
+    }
+    chart.version_released = getChartData.version_released
+    chart.chart = getChartData.chart
+  })
+
+  const sortedReMasterChartLevelData = sortChartLevelData(4)
+  const sortedMasterChartLevelData = sortChartLevelData(3)
+
+  const sortedChartLevelData = sortedReMasterChartLevelData.concat(sortedMasterChartLevelData)
+
+  const sortedSongData = []
+  sortedChartLevelData.forEach((chart) => {
+    const getSong = songData.find((song) => song._id === chart.chart_id)
+    sortedSongData.push(getSong)
+  })
+
+  function sortChartLevelData(index) {
+    const sortedChartLevelData = []
+    chartLevelData.forEach((chart) => {
+      if (index === 4 && chart.level[index]) {
+        sortedChartLevelData.push(chart)
+      }
+      if (index === 3 && chart.level[index] && !chart.level[4]) {
+        sortedChartLevelData.push(chart)
+      }
+    })
+    sortedChartLevelData.sort((a, b) => b.level[index] - a.level[index])
+    return sortedChartLevelData
+  }
+
+  const filteredChartData = sortedChartLevelData.filter((chart) => {
     if (versionF) {
       const selectedVersions = versionF.split(",")
       if (!selectedVersions.includes(chart.version_released)) {
@@ -38,11 +93,12 @@ export default function NewList() {
 
   // dark mode
   const [selectedOption, setSelectedOption] = React.useState(
-    () => JSON.parse(localStorage.getItem("songlisttheme")) || "light"
+    () => JSON.parse(localStorage.getItem("songlisttheme")) || "dark"
   )
 
   React.useEffect(() => {
     document.body.classList.toggle("dark", selectedOption === "dark")
+    document.title = "Browse Songs"
   }, [])
 
   const titleStyle = {
@@ -107,6 +163,12 @@ export default function NewList() {
     if (version === "Universe" || version === "Universe+") {
       return {
         backgroundColor: "#2F58CD",
+      }
+    }
+    if (version === "Buddies") {
+      return {
+        backgroundColor: "#FB8B24",
+        color: "#0F2167",
       }
     }
   }
@@ -202,6 +264,38 @@ export default function NewList() {
     cursor: "pointer",
   }
 
+  const youtubeUrlStyle = {
+    color: "white",
+    fontWeight: "600",
+    fontSize: "14px",
+    borderRadius: "10px",
+    width: "fit-content",
+    paddingRight: "1.5%",
+    paddingLeft: "1.5%",
+    paddingBottom: "2px",
+    paddingTop: "2px",
+    margin: "0",
+    margin: "0px 10px 10px 10px",
+  }
+
+  function youtubeUrlBackgroundColor(difficulty) {
+    if (difficulty === "Expert") {
+      return {
+        backgroundColor: "#ff828d",
+      }
+    }
+    if (difficulty === "Master") {
+      return {
+        backgroundColor: "#a051dc",
+      }
+    }
+    if (difficulty === "Re:Master") {
+      return {
+        backgroundColor: "#beadfa",
+      }
+    }
+  }
+
   function kanjiToVersion(kanji) {
     const conversion = {
       真: ["Maimai", "Plus"],
@@ -224,6 +318,7 @@ export default function NewList() {
       星: ["Universe+"],
       祭: ["Festival"],
       祝: ["Festival+"],
+      友: ["Buddies"],
     }
     return conversion[kanji]
   }
@@ -249,6 +344,7 @@ export default function NewList() {
       "星",
       "祭",
       "祝",
+      "友",
     ]
     return kanjiVersions.map((kanjiVersion) => {
       const version = kanjiToVersion(kanjiVersion)
@@ -279,14 +375,153 @@ export default function NewList() {
     }
   }
 
+  async function getYouTubeVideoTitle(url) {
+    // Extract the video ID from the YouTube URL
+    const videoId = extractVideoId(url)
+    console.log(videoId)
+
+    // Make a request to the YouTube Data API to get video details
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=AIzaSyDxcyxqu1ZPy_fPmp9FCJdneFKQz66OqmU`
+    )
+    const data = await response.json()
+
+    // Extract the video title from the API response
+    const videoTitle = data.items[0].snippet.title
+
+    setYoutubeUrl((prevObject) => {
+      return { ...prevObject, [videoId]: videoTitle }
+    })
+
+    console.log(youtubeUrl)
+
+    return videoTitle
+  }
+
+  function extractVideoId(url) {
+    const videoIdRegex =
+      /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})(?:.*)?/
+    const match = url.match(videoIdRegex)
+    return match ? match[1] : null
+  }
+
   function renderChartGrid() {
-    return songData.map((song) => {
+    return sortedSongData.map((song) => {
       const chartObjectArr = filteredChartData.filter(
         (chart) => chart.chart_id === song._id
       )
-      const levels = chartObjectArr[0] && chartObjectArr[0].level
-      const chartType = chartObjectArr[0] && chartObjectArr[0].chart
-      const youtube = chartObjectArr[0] && chartObjectArr[0].youtube
+
+      const youtube2 = () => {
+        const youtubeId = []
+        const difficulty = []
+        chartObjectArr.forEach((chart) => {
+          chart.youtube.forEach((youtube, index) => {
+            if (youtube) {
+              youtubeId.push(extractVideoId(youtube))
+              if (index === 2) {
+                difficulty.push("Expert")
+              } else if (index === 3) {
+                difficulty.push("Master")
+              } else if (index === 4) {
+                difficulty.push("Re:Master")
+              }
+            }
+          })
+        })
+        const checkYoutubeArr = youtubeId.some((id) =>
+          youtubeUrl.hasOwnProperty(id)
+        )
+
+        return (
+          <div style={{ display: "grid", marginTop: '10px' }}>
+            {checkYoutubeArr ? (
+              youtubeId.map((id, index) => {
+                return (
+                  <Link
+                    to={`https://youtube.com/watch?v=${id}`}
+                    target="_blank"
+                  >
+                    <p
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        ...youtubeUrlBackgroundColor(difficulty[index]),
+                        ...youtubeUrlStyle,
+                      }}
+                    >
+                      <BsYoutube
+                        style={{ alignItems: "center", fontSize: "18px" }}
+                      />
+                      {youtubeUrl[id]}
+                    </p>
+                  </Link>
+                )
+              })
+            ) : (
+              <p>Loading...</p>
+            )}
+          </div>
+        )
+      }
+
+      const chartRow = chartObjectArr.map((chart) => {
+        return (
+          <div
+            style={{
+              marginLeft: "10px",
+              marginRight: "10px",
+              display: "flex",
+              gap: "5px",
+              alignItems: "center",
+            }}
+          >
+            <p style={{ backgroundColor: "#6ed43e", ...levelBoxStyle }}>
+              {chart.level[0] != 0 && convertLevel(chart.level[0])}
+            </p>
+            <p style={{ backgroundColor: "#f7b807", ...levelBoxStyle }}>
+              {chart.level[1] != 0 && convertLevel(chart.level[1])}
+            </p>
+            <p style={{ backgroundColor: "#ff828d", ...levelBoxStyle }}>
+              {chart.level[2] != 0 && convertLevel(chart.level[2])}
+            </p>
+            <p style={{ backgroundColor: "#a051dc", ...levelBoxStyle }}>
+              {chart.level[3] != 0 && convertLevel(chart.level[3])}
+            </p>
+            <p style={remasterLevelBoxStyle}>
+              {chart.level[4] != 0 && convertLevel(chart.level[4])}
+            </p>
+            {chart.chart === "s" && (
+              <li style={standardBoxStyle}>
+                <span style={{ color: "white", fontWeight: "800" }}>
+                  スタンダード
+                </span>
+              </li>
+            )}
+            {chart.chart === "d" && (
+              <li style={deluxeBoxStyle}>
+                <span style={{ color: "#d90429", fontWeight: "800" }}>で</span>
+                <span style={{ color: "#fb8500", fontWeight: "800" }}>ら</span>
+                <span style={{ color: "#ffb703", fontWeight: "800" }}>っ</span>
+                <span style={{ color: "#2a9d8f", fontWeight: "800" }}>く</span>
+                <span style={{ color: "#0077b6", fontWeight: "800" }}>す</span>
+              </li>
+            )}
+          </div>
+        )
+      })
+
+      const chartVersion = chartObjectArr.map((chart) => {
+        return (
+          <p
+            style={{
+              ...versionStyle,
+              ...versionBackgroundColor(chart.version_released),
+            }}
+          >
+            {chart.version_released}
+          </p>
+        )
+      })
 
       if (chartObjectArr[0]) {
         return (
@@ -304,57 +539,7 @@ export default function NewList() {
               </h3>
             </div>
 
-            <div
-              style={{
-                marginLeft: "10px",
-                marginRight: "10px",
-                display: "flex",
-                gap: "5px",
-                alignItems: "center",
-              }}
-            >
-              <p style={{ backgroundColor: "#6ed43e", ...levelBoxStyle }}>
-                {levels[0] != 0 && convertLevel(levels[0])}
-              </p>
-              <p style={{ backgroundColor: "#f7b807", ...levelBoxStyle }}>
-                {levels[1] != 0 && convertLevel(levels[1])}
-              </p>
-              <p style={{ backgroundColor: "#ff828d", ...levelBoxStyle }}>
-                {levels[2] != 0 && convertLevel(levels[2])}
-              </p>
-              <p style={{ backgroundColor: "#a051dc", ...levelBoxStyle }}>
-                {levels[3] != 0 && convertLevel(levels[3])}
-              </p>
-              <p style={remasterLevelBoxStyle}>
-                {levels[4] != 0 && convertLevel(levels[4])}
-              </p>
-              {chartType === "s" && (
-                <li style={standardBoxStyle}>
-                  <span style={{ color: "white", fontWeight: "800" }}>
-                    スタンダード
-                  </span>
-                </li>
-              )}
-              {chartType === "d" && (
-                <li style={deluxeBoxStyle}>
-                  <span style={{ color: "#d90429", fontWeight: "800" }}>
-                    で
-                  </span>
-                  <span style={{ color: "#fb8500", fontWeight: "800" }}>
-                    ら
-                  </span>
-                  <span style={{ color: "#ffb703", fontWeight: "800" }}>
-                    っ
-                  </span>
-                  <span style={{ color: "#2a9d8f", fontWeight: "800" }}>
-                    く
-                  </span>
-                  <span style={{ color: "#0077b6", fontWeight: "800" }}>
-                    す
-                  </span>
-                </li>
-              )}
-            </div>
+            {chartRow}
 
             <div
               style={{
@@ -371,28 +556,29 @@ export default function NewList() {
                   alignItems: "center",
                 }}
               >
-                <p
-                  style={{
-                    ...versionStyle,
-                    ...versionBackgroundColor(
-                      chartObjectArr[0].version_released
-                    ),
-                  }}
-                >
-                  {chartObjectArr[0].version_released}
-                </p>
+                {chartVersion}
               </div>
               <div>
-                {(youtube) && (
+                {(chartObjectArr[0].youtube ||
+                  (chartObjectArr.length === 2 &&
+                    chartObjectArr[1].youtube)) && (
                   <BsYoutube
                     onClick={() => {
-                      if (youtubeVisible.includes(song.id)) {
+                      if (youtubeVisible.includes(song._id)) {
                         const newArr = youtubeVisible.filter(
-                          (id) => id !== song.id
+                          (id) => id !== song._id
                         )
                         setYoutubeVisible(newArr)
                       } else {
-                        setYoutubeVisible([...youtubeVisible, song.id])
+                        setYoutubeVisible([...youtubeVisible, song._id])
+                        chartObjectArr[0].youtube.forEach((youtube) => {
+                          getYouTubeVideoTitle(youtube)
+                        })
+                        if (chartObjectArr[1].youtube) {
+                          chartObjectArr[1].youtube.forEach((youtube) => {
+                            getYouTubeVideoTitle(youtube)
+                          })
+                        }
                       }
                     }}
                     style={{
@@ -415,64 +601,8 @@ export default function NewList() {
               </div>
             </div>
 
-            {youtubeVisible.includes(song.id) && (
-              <>
-                {chartType === "s" && youtube && (
-                  <div
-                    style={{
-                      marginLeft: "15px",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    <p style={{ color: "white", fontSize: "12px" }}>
-                      スタンダード
-                    </p>
-                    <div style={{ marginLeft: "10px" }}>
-                      {
-                        <Link to={youtube[3]}>
-                          <BsYoutube
-                            style={{
-                              fontSize: "20px",
-                              cursor: "pointer",
-                              marginTop: "7px",
-                              color: "#5D12D2",
-                            }}
-                          />
-                        </Link>
-                      }
-                    </div>
-                  </div>
-                )}
-                {chartType === "d" && youtube && (
-                  <div
-                    style={{
-                      marginLeft: "15px",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    <p style={{ color: "white", fontSize: "12px" }}>
-                      でらっくす
-                    </p>
-                    <div style={{ marginLeft: "10px" }}>
-                      {
-                        <Link to={youtube[3]}>
-                          <BsYoutube
-                            style={{
-                              fontSize: "20px",
-                              cursor: "pointer",
-                              marginTop: "7px",
-                              color: "#5D12D2",
-                            }}
-                          />
-                        </Link>
-                      }
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+            {/* {youtubeVisible.includes(song._id) && <>{youtube}</>} */}
+            {youtubeVisible.includes(song._id) && <>{youtube2()}</>}
           </div>
         )
       }
@@ -492,6 +622,7 @@ export default function NewList() {
         Reset
       </button>
       {renderChartGrid()}
+      <ScrollToTopButton />
     </div>
   )
 }

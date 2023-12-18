@@ -25,6 +25,9 @@ export default function props() {
         <Link to='/favorite' className='menu-item' onClick={closeSideBar}>
           Favorite
         </Link>
+        <Link to='/new-list' className='menu-item' onClick={closeSideBar}>
+          Browse Songs
+        </Link>
         <Link to='/converter' className='menu-item' onClick={closeSideBar}>
           Chart Converter
         </Link>

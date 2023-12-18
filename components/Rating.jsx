@@ -1,17 +1,19 @@
 import React from "react"
 import { useLoaderData } from "react-router-dom"
-import { rating } from "./Database/FirebaseAccount"
 import { fetchFestivalPlusData } from "./Server/fetchBackend"
 import { fetchChartsData } from "./Server/fetchBackend"
+import { fetchSongsData } from "./Server/fetchBackend"
 import { fetchBuddiesData } from "./Server/fetchBackend"
 import { BsXLg, BsFunnel } from "react-icons/bs"
 
 export async function loader() {
-  const chartsPromise = await fetchChartsData()
+  const songsPromise = await fetchSongsData()
+  const chartDataPromise = await fetchChartsData()
   const festivalPlusChartLevelsPromise = await fetchFestivalPlusData()
   const buddiesChartLevelPromise = await fetchBuddiesData()
   return {
-    charts: chartsPromise,
+    songs: songsPromise,
+    chartData: chartDataPromise,
     festivalPlusChartLevels: festivalPlusChartLevelsPromise,
     buddiesChartLevels: buddiesChartLevelPromise,
   }
@@ -19,9 +21,13 @@ export async function loader() {
 
 export default function Rating() {
   const useLoader = useLoaderData()
-  const charts = useLoader.charts
+
+  const charts = useLoader.songs
+  const chartData = useLoader.chartData
   const festivalPlusChartLevels = useLoader.festivalPlusChartLevels
   const buddiesChartLevels = useLoader.buddiesChartLevels
+
+  const currentVersionId = []
 
   const versionList = {
     Maimai: 1,
@@ -53,8 +59,10 @@ export default function Rating() {
 
   let chartLevels = []
   if (version === "Festival+") {
+    addChartData(festivalPlusChartLevels)
     chartLevels = festivalPlusChartLevels
   } else if (version === "Buddies") {
+    addChartData(buddiesChartLevels)
     chartLevels = buddiesChartLevels
   }
 
@@ -154,6 +162,22 @@ export default function Rating() {
   const [showNewSortedThumbnails, setNewShowSortedThumbnails] =
     React.useState(false)
 
+  function addChartData(chartLevels) {
+    for (let i = 0; i < chartLevels.length; i++) {
+      currentVersionId.push(chartLevels[i]._id)
+    }
+    const currentVersionChartData = chartData.filter((chart) =>
+      currentVersionId.includes(chart._id)
+    )
+    chartLevels.forEach((chart) => {
+      const getChartData = currentVersionChartData.filter(
+        (chartData) => chartData._id === chart._id
+      )[0]
+      chart.version_released = getChartData.version_released
+      chart.chart = getChartData.chart
+    })
+  }
+
   function getImageUrl(id) {
     return new URL(`../src/images/thumbnails/${id}.png`, import.meta.url).href
   }
@@ -236,7 +260,7 @@ export default function Rating() {
       if (count) {
         return (
           <div>
-            <h2 style={titleStyle}>{level}</h2>
+            <h2 style={titleStyle}>{level % 1 === 0 ? `${level}.0` : level}</h2>
             <div className="rating-old-song-container">{charts}</div>
           </div>
         )
@@ -275,7 +299,7 @@ export default function Rating() {
       if (count) {
         return (
           <div>
-            <h2 style={titleStyle}>{level}</h2>
+            <h2 style={titleStyle}>{level % 1 === 0 ? `${level}.0` : level}</h2>
             <div className="rating-new-song-container">{charts}</div>
           </div>
         )
@@ -421,6 +445,19 @@ export default function Rating() {
         <h3 style={titleStyle}>
           Best 15 total: {calculateTotalRating(selectedNewVersionSongs)}
         </h3>
+        {selectedNewVersionSongs.length > 0 && (
+          <button
+            style={{
+              marginLeft: "10px",
+              borderStyle: "none",
+              padding: "7px 10px",
+              borderRadius: "10px",
+            }}
+            onClick={() => setSelectedNewVersionSongs([])}
+          >
+            Clear all
+          </button>
+        )}
         <table
           className="rating-table"
           style={{ margin: "10px 10px 10px 10px", ...titleStyle }}
@@ -462,6 +499,19 @@ export default function Rating() {
         <h3 style={titleStyle}>
           Best 35 total: {calculateTotalRating(selectedOldVersionSongs)}
         </h3>
+        {selectedOldVersionSongs.length > 0 && (
+          <button
+            style={{
+              marginLeft: "10px",
+              borderStyle: "none",
+              padding: "7px 10px",
+              borderRadius: "10px",
+            }}
+            onClick={() => setSelectedOldVersionSongs([])}
+          >
+            Clear all
+          </button>
+        )}
         <table
           className="rating-table"
           style={{ margin: "10px 10px 10px 10px", ...titleStyle }}
@@ -495,6 +545,7 @@ export default function Rating() {
           {!showOldSortedThumbnails && renderOldSongs(version)}
         </div>
       </div>
+      
     </div>
   )
 }
