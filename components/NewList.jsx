@@ -56,8 +56,11 @@ export default function NewList() {
   const sortedSongData = []
   sortedChartLevelData.forEach((chart) => {
     const getSong = songData.find((song) => song._id === chart.chart_id)
-    sortedSongData.push(getSong)
+    if (!sortedSongData.find((song) => song._id === chart.chart_id)) {
+      sortedSongData.push(getSong)
+    }
   })
+  console.log(sortedSongData)
 
   function sortChartLevelData(index) {
     const sortedChartLevelData = []
@@ -274,7 +277,6 @@ export default function NewList() {
     paddingLeft: "1.5%",
     paddingBottom: "2px",
     paddingTop: "2px",
-    margin: "0",
     margin: "0px 10px 10px 10px",
   }
 
@@ -382,7 +384,7 @@ export default function NewList() {
 
     // Make a request to the YouTube Data API to get video details
     const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=AIzaSyDxcyxqu1ZPy_fPmp9FCJdneFKQz66OqmU`
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=`
     )
     const data = await response.json()
 

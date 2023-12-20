@@ -192,7 +192,7 @@ header {
   padding-top: 100px;
 }
 
-.ma2-container, .new-list-container, .rating-container, .updates-detail-container, .update-container, .success-container, .favorite-container, .converter-container, .about-container, .settings-container, .target-container, .register-container {
+.loading-container, .ma2-container, .new-list-container, .rating-container, .updates-detail-container, .update-container, .success-container, .favorite-container, .converter-container, .about-container, .settings-container, .target-container, .register-container {
   padding-top: 80px;
 }
 

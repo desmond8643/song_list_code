@@ -23,65 +23,125 @@ import {
   createRoutesFromElements,
   Route,
   RouterProvider,
+  useNavigation,
+  Outlet,
 } from "react-router-dom"
 import Ma2 from "../components/Ma2"
+
+import styled, { keyframes } from "styled-components"
+
+const fadeIn = keyframes`
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+`
+
+const fadeOut = keyframes`
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+`
+
+const AnimatedText = styled.p`
+  animation: ${fadeIn} 2s ease-in-out infinite;
+  animation-delay: 0s;
+
+  &:nth-child(2) {
+    animation: ${fadeOut} 2s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+`
+
+function Loading() {
+  const { state } = useNavigation()
+
+  const loadingStyle = {
+    color: "white",
+    position: "absolute",
+    top: "50%",
+    left: "46%",
+    fontWeight: "bold",
+    fontSize: "20px",
+  }
+
+  if (state === "loading") {
+    return (
+      <div className="loading-container">
+        <AnimatedText style={loadingStyle}>Loading...</AnimatedText>
+      </div>
+    )
+  }
+  return <Outlet />
+}
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<Layout />}>
-      <Route index element={<Filter />} loader={filterLoader} />
-      <Route path="favorite" element={<Favorite />} loader={favoriteLoader} />
-      <Route path="about" element={<About />} />
-      <Route path="converter" element={<Converter />} />
-      <Route path="settings" element={<Settings />} />
-      <Route
-        path="dxscore"
-        element={<DeluxeScore />}
-        loader={deluxeScoreLoader}
-      />
-      <Route path="target" element={<Target />} loader={targetLoader} />
-      <Route path="metronome" element={<Metronome />} />
-      <Route path="updates" element={<Updates />} loader={updatesLoader} />
-      <Route
-        path="updates/:updateName"
-        element={<UpdatesDetail />}
-        loader={updatesDetailLoader}
-      />
-      <Route path="rating" element={<Rating />} loader={ratingLoader} />
+      <Route element={<Loading />}>
+        <Route index element={<Filter />} loader={filterLoader} />
+        <Route path="favorite" element={<Favorite />} loader={favoriteLoader} />
+        <Route path="about" element={<About />} />
+        <Route path="converter" element={<Converter />} />
+        <Route path="settings" element={<Settings />} />
+        <Route
+          path="dxscore"
+          element={<DeluxeScore />}
+          loader={deluxeScoreLoader}
+        />
+        <Route path="target" element={<Target />} loader={targetLoader} />
+        <Route path="metronome" element={<Metronome />} />
+        <Route path="updates" element={<Updates />} loader={updatesLoader} />
+        <Route
+          path="updates/:updateName"
+          element={<UpdatesDetail />}
+          loader={updatesDetailLoader}
+        />
+        <Route path="rating" element={<Rating />} loader={ratingLoader} />
 
-      <Route path="new-list" element={<NewList />} loader={newListLoader} />
-      <Route path="ma2" element={<Ma2 />}/>
-      <Route path="success" element={<Success />} />
-      <Route
-        path="register"
-        element={<Register />}
-        loader={async () => {
-          const isLoggedIn = localStorage.getItem("maimaiSongListUser")
-          if (isLoggedIn) {
-            throw redirect("/")
-          }
-          return null
-        }}
-      />
-      <Route
-        path="login"
-        element={<Login />}
-        loader={async () => {
-          const isLoggedIn = localStorage.getItem("maimaiSongListUser")
-          if (isLoggedIn) {
-            throw redirect("/")
-          }
-          return null
-        }}
-      />
+        <Route path="new-list" element={<NewList />} loader={newListLoader} />
+        <Route path="ma2" element={<Ma2 />} />
+        <Route path="success" element={<Success />} />
+        <Route
+          path="register"
+          element={<Register />}
+          loader={async () => {
+            const isLoggedIn = localStorage.getItem("maimaiSongListUser")
+            if (isLoggedIn) {
+              throw redirect("/")
+            }
+            return null
+          }}
+        />
+        <Route
+          path="login"
+          element={<Login />}
+          loader={async () => {
+            const isLoggedIn = localStorage.getItem("maimaiSongListUser")
+            if (isLoggedIn) {
+              throw redirect("/")
+            }
+            return null
+          }}
+        />
+      </Route>
     </Route>
   )
 )
 
 function App() {
-  return (
-      <RouterProvider router={router} />
-  )
+  return <RouterProvider router={router} />
 }
 
 export default App
